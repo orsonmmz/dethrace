@@ -88,7 +88,7 @@ static GLuint CreateShaderProgram(char* name, const char* vertex_shader, const i
     glGetShaderiv(v_shader, GL_COMPILE_STATUS, &success);
     if (!success) {
         glGetShaderInfoLog(v_shader, 1024, NULL, log_buffer);
-        LOG_PANIC("shader %s failed to compile: %s", name, log_buffer);
+        LOG_PANIC("vertex shader %s failed to compile: %s", name, log_buffer);
     }
 
     f_shader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -97,9 +97,8 @@ static GLuint CreateShaderProgram(char* name, const char* vertex_shader, const i
     glCompileShader(f_shader);
     glGetShaderiv(f_shader, GL_COMPILE_STATUS, &success);
     if (!success) {
-        char log_buffer[1024];
         glGetShaderInfoLog(f_shader, 1024, NULL, log_buffer);
-        LOG_PANIC("shader %s failed to compile: %s", name, log_buffer);
+        LOG_PANIC("fragment shader %s failed to compile: %s", name, log_buffer);
     }
 
     glAttachShader(program, v_shader);
@@ -111,7 +110,7 @@ static GLuint CreateShaderProgram(char* name, const char* vertex_shader, const i
     GLint link_ok = GL_FALSE;
     glGetProgramiv(program, GL_LINK_STATUS, &link_ok);
     if (!link_ok) {
-        glGetShaderInfoLog(program, 1024, NULL, log_buffer);
+        glGetProgramInfoLog(program, 1024, NULL, log_buffer);
         LOG_PANIC("shader program %s failed to link: %s", name, log_buffer);
     }
     return program;
