@@ -54,11 +54,19 @@ static void* create_window_and_renderer(char* title, int x, int y, int width, in
         LOG_PANIC("SDL_INIT_VIDEO error: %s", SDL_GetError());
     }
 
+#ifdef DETHRACE_GLES_RENDERER
+    if (SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES) != 0) {
+#else
     if (SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE) != 0) {
+#endif
         LOG_PANIC("Failed to set SDL_GL_CONTEXT_PROFILE_MASK attribute. %s", SDL_GetError());
     };
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+#ifdef DETHRACE_GLES_RENDERER
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+#else
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+#endif
 
     SDL_GL_SetSwapInterval(1);
 

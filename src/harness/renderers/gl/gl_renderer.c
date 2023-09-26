@@ -82,8 +82,13 @@ static GLuint CreateShaderProgram(char* name, const char* vertex_shader, const i
 
     program = glCreateProgram();
     v_shader = glCreateShader(GL_VERTEX_SHADER);
-    const GLchar* vertex_sources[] = { vertex_shader };
-    glShaderSource(v_shader, 1, vertex_sources, &vertex_shader_len);
+#ifdef DETHRACE_GLES_RENDERER
+    const GLchar* vertex_sources[] = { "#version 320 es\n", vertex_shader };
+#else
+    const GLchar* vertex_sources[] = { "#version 140\n", vertex_shader };
+#endif
+    const GLint vertex_lengths[] = { strlen(vertex_sources[0]), vertex_shader_len };
+    glShaderSource(v_shader, 2, vertex_sources, vertex_lengths);
     glCompileShader(v_shader);
     glGetShaderiv(v_shader, GL_COMPILE_STATUS, &success);
     if (!success) {
@@ -92,8 +97,13 @@ static GLuint CreateShaderProgram(char* name, const char* vertex_shader, const i
     }
 
     f_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    const GLchar* fragment_sources[] = { fragment_shader };
-    glShaderSource(f_shader, 1, fragment_sources, &fragment_shader_len);
+#ifdef DETHRACE_GLES_RENDERER
+    const GLchar* fragment_sources[] = { "#version 320 es\n", fragment_shader };
+#else
+    const GLchar* fragment_sources[] = { "#version 140\n", fragment_shader };
+#endif
+    const GLint fragment_lengths[] = { strlen(fragment_sources[0]), fragment_shader_len };
+    glShaderSource(f_shader, 2, fragment_sources, fragment_lengths);
     glCompileShader(f_shader);
     glGetShaderiv(f_shader, GL_COMPILE_STATUS, &success);
     if (!success) {
@@ -611,10 +621,14 @@ void GLRenderer_Model(br_actor* actor, br_model* model, br_material* material, b
 
     switch (render_type) {
     case BRT_TRIANGLE:
+#ifndef DETHRACE_GLES_RENDERER
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+#endif
         break;
     case BRT_LINE:
+#ifndef DETHRACE_GLES_RENDERER
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+#endif
         glUniform1ui(uniforms_3d.material_index_base, 255);
         glUniform1ui(uniforms_3d.material_flags, 0);
         break;
@@ -625,7 +639,19 @@ void GLRenderer_Model(br_actor* actor, br_model* model, br_material* material, b
     for (int g = 0; g < v11->ngroups; g++) {
         group = &v11->groups[g];
         setActiveMaterial(group->stored);
+
+#ifdef DETHRACE_GLES_RENDERER
+        // GLES cannot rely on glPolygonMode() to enable wireframe rendering
+        if (render_type == BRT_LINE) {
+            for (int h = 0; h < group->nfaces; h++) {
+                glDrawElements(GL_LINE_LOOP, 3, GL_UNSIGNED_INT, (void*)((element_index + 3 * h)* sizeof(int)));
+            }
+        } else {
+            glDrawElements(GL_TRIANGLES, group->nfaces * 3, GL_UNSIGNED_INT, (void*)(element_index * sizeof(int)));
+        }
+#else
         glDrawElements(GL_TRIANGLES, group->nfaces * 3, GL_UNSIGNED_INT, (void*)(element_index * sizeof(int)));
+#endif
         element_index += group->nfaces * 3;
     }
 
@@ -681,6 +707,32 @@ void GLRenderer_BufferTexture(br_pixelmap* pm) {
     CHECK_GL_ERROR("GLRenderer_BufferTexture");
 }
 
+static void getTexImage(GLuint texture, GLsizei width, GLsizei height, GLenum format, GLenum type, void * pixels)
+{
+#ifdef DETHRACE_GLES_RENDERER
+    // OpenGLES does not provide glGetTexImage, so this is a workaround
+    GLuint fbo;
+
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+    if (format == GL_DEPTH_COMPONENT) {
+        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, texture, 0);
+    } else {
+        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
+    }
+
+    glReadPixels(0, 0, width, height, format, type, pixels);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDeleteFramebuffers(1, &fbo);
+#else
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glGetTexImage(GL_TEXTURE_2D, 0, format, type, pixels);
+#endif
+
+    CHECK_GL_ERROR("getTexImage");
+}
+
 void GLRenderer_FlushBuffer(tRenderer_flush_type flush_type) {
 
     if (!dirty_buffers) {
@@ -688,8 +740,8 @@ void GLRenderer_FlushBuffer(tRenderer_flush_type flush_type) {
     }
 
     // pull framebuffer into cpu memory to emulate BRender behavior
-    glBindTexture(GL_TEXTURE_2D, framebuffer_texture);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, screen_buffer_flip_pixels);
+    getTexImage(framebuffer_texture, render_width, render_height,
+            GL_RED_INTEGER, GL_UNSIGNED_BYTE, screen_buffer_flip_pixels);
 
     // flip texture to match the expected orientation
     int dest_y = render_height;
@@ -706,10 +758,9 @@ void GLRenderer_FlushBuffer(tRenderer_flush_type flush_type) {
     }
 
     if (flush_type == eFlush_all) {
-
         // pull depthbuffer into cpu memory to emulate BRender behavior
-        glBindTexture(GL_TEXTURE_2D, depth_texture);
-        glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT, depth_buffer_flip_pixels);
+        getTexImage(depth_texture, render_width, render_height,
+                GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT, depth_buffer_flip_pixels);
 
         dest_y = last_colour_buffer->height;
         int src_y = render_height - last_colour_buffer->base_y - last_colour_buffer->height;

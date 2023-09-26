@@ -1,7 +1,5 @@
-#version 140
 precision mediump float;
 precision mediump usampler2D;
-
 in vec2 v_tex_coord;
 
 uniform usampler2D u_pixels;

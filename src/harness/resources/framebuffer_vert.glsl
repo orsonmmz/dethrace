@@ -1,5 +1,3 @@
-#version 140
-
 in vec3 a_pos;
 in vec3 a_color;
 in vec2 a_uv;

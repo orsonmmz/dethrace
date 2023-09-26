@@ -1,4 +1,3 @@
-#version 140
 precision mediump float;
 precision mediump usampler2D;
 
@@ -97,7 +96,7 @@ void main(void) {
 
     if (u_material_blend_enabled == 1u) {
         // u_colour_buffer is upside down from opengl perspective. We need to sample it upside down.
-        uint current_framebuffer_color = texelFetch(u_colour_buffer, ivec2(gl_FragCoord.x, u_viewport_height - gl_FragCoord.y), 0).r;
+        uint current_framebuffer_color = texelFetch(u_colour_buffer, ivec2(int(gl_FragCoord.x), int(u_viewport_height) - int(gl_FragCoord.y)), 0).r;
         out_palette_index = texelFetch(u_material_blend_table, ivec2(out_palette_index, current_framebuffer_color), 0).r;
     }
 

@@ -20,6 +20,10 @@ if(DETHRACE_FIX_BUGS)
     target_compile_definitions(harness PRIVATE DETHRACE_FIX_BUGS)
 endif()
 
+if(DETHRACE_GLES_RENDERER)
+    target_compile_definitions(harness PRIVATE DETHRACE_GLES_RENDERER)
+endif()
+
 target_link_libraries(harness PRIVATE brender s3 compile_with_werror)
 
 if(WIN32)
