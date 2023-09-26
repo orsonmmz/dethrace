@@ -173,11 +173,11 @@ static void LoadShaders(void) {
 
 static void SetupFullScreenRectGeometry(void) {
     float vertices[] = {
-        // positions          // colors           // texture coords
-        1.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, // top right
-        1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,  // bottom right
-        -1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // bottom left
-        -1.0f, -1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f // top left
+        // positions         // colors          // texture coords
+         1.0f, -1.0f, 0.0f,  1.0f, 1.0f, 0.0f,  1.0f, 1.0f, // top right
+         1.0f,  1.0f, 0.0f,  1.0f, 0.0f, 0.0f,  1.0f, 0.0f, // bottom right
+        -1.0f,  1.0f, 0.0f,  0.0f, 0.0f, 0.0f,  0.0f, 0.0f, // bottom left
+        -1.0f, -1.0f, 0.0f,  0.0f, 1.0f, 0.0f,  0.0f, 1.0f  // top left
     };
     unsigned int indices[] = {
         0, 1, 3, // first triangle
@@ -384,11 +384,9 @@ void GLRenderer_EndScene(void) {
 }
 
 void GLRenderer_FullScreenQuad(uint8_t* screen_buffer) {
-
     glViewport(vp_x, vp_y, vp_width, vp_height);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDisable(GL_DEPTH_TEST);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     glBindTexture(GL_TEXTURE_2D, fullscreen_quad_texture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_R8UI, render_width, render_height, 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, screen_buffer);
