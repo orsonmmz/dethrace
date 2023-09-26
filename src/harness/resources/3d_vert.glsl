@@ -1,10 +1,9 @@
 #version 140
-#extension GL_ARB_explicit_attrib_location : require
 
-layout (location = 0) in vec3 a_pos;
-layout (location = 1) in vec3 a_normal;
-layout (location = 2) in vec2 a_uv;
-layout (location = 3) in float a_color;
+in vec3 a_pos;
+in vec3 a_normal;
+in vec2 a_uv;
+in float a_color;
 
 out vec3 v_frag_pos;
 out vec3 v_normal;
@@ -14,7 +13,7 @@ out float v_color;
 uniform mat4 u_model;
 uniform mat4 u_view;
 uniform mat4 u_projection;
-uniform uint u_material_flags;
+uniform mediump uint u_material_flags;
 uniform mat4 u_normal_matrix;
 
 // material_flags values
