@@ -757,6 +757,9 @@ void GLRenderer_FlushBuffer(tRenderer_flush_type flush_type) {
         }
     }
 
+#ifndef DETHRACE_GLES_RENDERER
+    // TODO GLES does not support glReadPixels() with depth textures
+    // it needs to be implemented differently
     if (flush_type == eFlush_all) {
         // pull depthbuffer into cpu memory to emulate BRender behavior
         getTexImage(depth_texture, render_width, render_height,
@@ -774,6 +777,8 @@ void GLRenderer_FlushBuffer(tRenderer_flush_type flush_type) {
             src_y++;
         }
     }
+#endif
+
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_id);
     glClear(GL_COLOR_BUFFER_BIT);
     flush_counter++;
